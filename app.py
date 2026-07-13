@@ -13,8 +13,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from agents.builtin.io.stt_agent import STTAgent, load_model as load_stt_model
-from agents.builtin.io.tts_agent import TTSAgent, load_engine as load_tts_engine
+from voice.adapters.legacy_agents import (
+    STTAgent,
+    TTSAgent,
+    load_stt_model,
+    load_tts_engine,
+)
+from voice import stt, tts
 
 logger = logging.getLogger("voice.app")
 
@@ -90,8 +95,8 @@ async def health() -> dict:
         "status":  "ok",
         "version": VERSION,
         "uptime_s": round(time.monotonic() - _startup_time, 2),
-        "stt_ready": stt_agent is not None,
-        "tts_ready": tts_agent is not None,
+        "stt_ready": stt.check_connection(),
+        "tts_ready": tts.check_connection(),
     }
 
 
