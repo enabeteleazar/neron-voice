@@ -1,3 +1,12 @@
-__pycache__/
+# =========================
+# PYTHON
+# =========================
+pycache/
 *.py[cod]
+*.pyo
+*.pyc
+*.pyd
+*.so
+
+__pycache__/
 .pytest_cache/
