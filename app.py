@@ -13,6 +13,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from common.metrics import mount_metrics
 from voice.adapters.legacy_agents import (
     STTAgent,
     TTSAgent,
@@ -58,6 +59,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="NéronOS Voice Daemon", version=VERSION, lifespan=lifespan)
+
+mount_metrics(app, "voice")
 
 
 class TranscribeRequest(BaseModel):
