@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import base64
 import logging
-import time
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -13,7 +12,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from common.metrics import mount_metrics
+from server.common.paths import service_version
+from server.common.service import create_service_app
 from voice.adapters.legacy_agents import (
     STTAgent,
     TTSAgent,
@@ -24,18 +24,15 @@ from voice import stt, tts
 
 logger = logging.getLogger("voice.app")
 
-VERSION = "0.1.0"
+VERSION = service_version(__file__)
 
 stt_agent: STTAgent | None = None
 tts_agent: TTSAgent | None = None
 
-_startup_time: float = 0.0
-
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    global stt_agent, tts_agent, _startup_time
-    _startup_time = time.monotonic()
+async def _setup(app: FastAPI):
+    global stt_agent, tts_agent
 
     logger.info("Démarrage voice daemon — chargement STT/TTS...")
 
@@ -58,9 +55,21 @@ async def lifespan(app: FastAPI):
     logger.info("Arrêt voice daemon.")
 
 
-app = FastAPI(title="NéronOS Voice Daemon", version=VERSION, lifespan=lifespan)
+def _health_details(request: Any) -> dict[str, Any]:
+    return {
+        "stt_ready": stt.check_connection(),
+        "tts_ready": tts.check_connection(),
+    }
 
-mount_metrics(app, "voice")
+
+app = create_service_app(
+    name="voice",
+    title="NéronOS Voice Daemon",
+    version=VERSION,
+    capabilities=["stt", "tts", "transcription", "synthesis"],
+    setup=_setup,
+    health=_health_details,
+)
 
 
 class TranscribeRequest(BaseModel):
@@ -90,17 +99,6 @@ class SynthesizeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     text: str = Field(..., min_length=1)
-
-
-@app.get("/health")
-async def health() -> dict:
-    return {
-        "status":  "ok",
-        "version": VERSION,
-        "uptime_s": round(time.monotonic() - _startup_time, 2),
-        "stt_ready": stt.check_connection(),
-        "tts_ready": tts.check_connection(),
-    }
 
 
 @app.post("/transcribe", response_model=TranscribeResponse)
