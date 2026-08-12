@@ -16,6 +16,9 @@ def convert_wav_to_mp3(wav_path: Path, mp3_path: Path) -> None:
     result = subprocess.run(
         [
             find_ffmpeg(),
+            "-nostdin",
+            "-loglevel",
+            "error",
             "-y",
             "-i",
             str(wav_path),
@@ -25,6 +28,7 @@ def convert_wav_to_mp3(wav_path: Path, mp3_path: Path) -> None:
             "4",
             str(mp3_path),
         ],
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         timeout=30,
     )
