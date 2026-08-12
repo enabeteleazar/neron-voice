@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import tempfile
 import time
@@ -11,6 +12,8 @@ from voice.models import TranscriptionResult
 from voice.stt.pipeline import validate_audio_input
 from voice.stt.providers import FasterWhisperProvider
 from voice.stt.providers.base import SttProvider
+
+logger = logging.getLogger("voice.stt")
 
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="voice_stt")
 _provider: SttProvider | None = None
@@ -57,6 +60,10 @@ def _transcribe_sync(audio: bytes, ext: str) -> TranscriptionResult:
         result = _provider.transcribe_file(tmp_path)
         metadata = dict(result.metadata)
         metadata.setdefault("duration_ms", round((time.monotonic() - start) * 1000, 2))
+        logger.info(
+            "STT %s : %d octets, %s ms, texte %d car. : %r",
+            ext, len(audio), metadata.get("duration_ms"), len(result.text), result.text[:120],
+        )
         return TranscriptionResult(
             text=result.text,
             language=result.language,
