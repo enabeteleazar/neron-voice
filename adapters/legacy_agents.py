@@ -40,6 +40,29 @@ class STTAgent:
                     "confidence": result.confidence,
                 },
             )
+        except ValueError as exc:
+            # Erreur de validation en entrée (format/taille) : faute du client.
+            latency_ms = round((time.monotonic() - start) * 1000, 2)
+            logger.warning(f"Audio invalide : {exc}")
+            return AgentResult(
+                success=False,
+                content="",
+                source="stt_agent",
+                error=str(exc),
+                latency_ms=latency_ms,
+                metadata={"error_type": "validation"},
+            )
+        except TimeoutError as exc:
+            latency_ms = round((time.monotonic() - start) * 1000, 2)
+            logger.error(f"Timeout transcription : {exc}")
+            return AgentResult(
+                success=False,
+                content="",
+                source="stt_agent",
+                error=str(exc),
+                latency_ms=latency_ms,
+                metadata={"error_type": "timeout"},
+            )
         except Exception as exc:
             latency_ms = round((time.monotonic() - start) * 1000, 2)
             logger.error(f"Erreur transcription : {exc}")
@@ -49,7 +72,7 @@ class STTAgent:
                 source="stt_agent",
                 error=f"Erreur transcription : {exc}",
                 latency_ms=latency_ms,
-                metadata={},
+                metadata={"error_type": "internal"},
             )
 
     async def reload(self) -> bool:

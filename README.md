@@ -65,6 +65,24 @@ Les variables d'environnement historiques restent supportees:
 `WHISPER_MODEL`, `WHISPER_LANGUAGE`, `WHISPER_DOWNLOAD_ROOT`,
 `AUDIO_MAX_SIZE_MB`, `TTS_VOICE`, `TTS_FORMAT`, `TTS_MAX_CHARS`.
 
+## Tests
+
+```bash
+pip install -r requirements-dev.txt --break-system-packages
+pytest
+```
+
+89 tests, ~87% de couverture sur `voice/`. Les parties non couvertes sont le
+chargement/inférence réels de `faster-whisper` et `piper` (nécessitent des
+fichiers de modèle sur disque) — testées côté contrat via des fakes plutôt
+qu'en conditions réelles. Voir `TODO.md` pour le détail des limites connues.
+
+`agents.builtin.base_agent` et `server.common.*` ne font pas partie de ce
+module : `tests/stubs/` fournit des doublons minimaux utilisés seulement en
+repli si ces packages ne sont pas déjà sur le `PYTHONPATH` (ex. en lançant
+les tests depuis le monorepo complet, les vraies implémentations prennent le
+dessus).
+
 ## Ajouter un provider
 
 1. Creer un provider dans `stt/providers` ou `tts/providers`.

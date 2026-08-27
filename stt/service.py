@@ -41,12 +41,36 @@ async def transcribe(audio: bytes, filename: str = "audio.wav") -> Transcription
     ext = validate_audio_input(audio, filename, config.max_size_mb)
     if _provider is None or not _provider.is_ready():
         raise RuntimeError("Modèle STT non chargé")
-    return await asyncio.get_event_loop().run_in_executor(
-        _executor,
-        _transcribe_sync,
-        audio,
-        ext,
-    )
+
+    loop = asyncio.get_event_loop()
+    future = loop.run_in_executor(_executor, _transcribe_sync, audio, ext)
+
+    # On utilise asyncio.wait() plutôt que asyncio.wait_for() ici : wait_for
+    # tente d'annuler le Future à l'expiration du délai, mais l'annulation
+    # d'un Future d'executor déjà en cours d'exécution est documentée comme
+    # sans effet ET comme un point de comportement qui a varié entre
+    # versions de Python (perte de l'annulation, ou attente de la
+    # complétion malgré tout selon la version). asyncio.wait() n'essaie
+    # jamais d'annuler : il attend juste le délai, puis nous laissons le
+    # Future pending tel quel — comportement simple et stable, quelle que
+    # soit la version de Python.
+    done, pending = await asyncio.wait({future}, timeout=config.timeout)
+
+    if future in pending:
+        # NB : le thread du ThreadPoolExecutor continue de tourner en
+        # arrière-plan jusqu'à ce que faster-whisper rende la main (il n'y a
+        # pas d'annulation dure possible pour un appel bloquant en thread
+        # natif). Ça protège la requête HTTP d'un blocage infini, mais pas
+        # le pool lui-même contre un worker durablement occupé — un vrai
+        # correctif (process isolé, ou timeout côté modèle) reste à faire
+        # si ça se produit souvent.
+        logger.error(
+            "Timeout STT après %ss (%s, %d octets) — le worker continue en arrière-plan.",
+            config.timeout, ext, len(audio),
+        )
+        raise TimeoutError(f"Transcription STT au-delà du timeout ({config.timeout}s)")
+
+    return future.result()
 
 
 def _transcribe_sync(audio: bytes, ext: str) -> TranscriptionResult:

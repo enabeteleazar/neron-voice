@@ -113,10 +113,21 @@ async def transcribe(req: TranscribeRequest) -> TranscribeResponse:
 
     result = await stt_agent.transcribe(audio_bytes, req.filename)
 
+    if not result.success:
+        # On aligne le contrat d'erreur sur /synthesize : un échec ne doit
+        # jamais revenir en 200 avec success=false, sinon un client qui se
+        # fie au code HTTP rate silencieusement l'erreur.
+        error_type = result.metadata.get("error_type")
+        status_code = {
+            "validation": 400,
+            "timeout": 504,
+        }.get(error_type, 422)
+        raise HTTPException(status_code=status_code, detail=result.error or "Erreur transcription")
+
     return TranscribeResponse(
         success=result.success,
-        text=result.content if result.success else None,
-        language=result.metadata.get("language") if result.success else None,
+        text=result.content,
+        language=result.metadata.get("language"),
         latency_ms=result.latency_ms,
         error=result.error,
         metadata=result.metadata,
