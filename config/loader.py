@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+logger = logging.getLogger("voice.config")
 
 
 @dataclass(frozen=True)
@@ -39,20 +42,30 @@ class VoiceConfig:
 
 
 def _project_root() -> Path:
-    return Path(__file__).resolve().parents[4]
+    # server/voice/config/loader.py -> parents[3] == racine du repo (/etc/neronOS).
+    # Un VOICE_PROJECT_ROOT explicite permet de bypasser ce calcul si la
+    # structure de déploiement change (ou pour les tests).
+    override = os.getenv("VOICE_PROJECT_ROOT")
+    if override:
+        return Path(override)
+    return Path(__file__).resolve().parents[3]
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
+        logger.warning("Fichier de config introuvable, defaults utilisés : %s", path)
         return {}
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     if not isinstance(data, dict):
+        logger.warning("Contenu YAML invalide (pas un mapping), defaults utilisés : %s", path)
         return {}
     return data
 
 
 def load_voice_config(path: str | Path | None = None) -> VoiceConfig:
-    raw = _read_yaml(Path(path) if path else _project_root() / "config" / "voice.yaml")
+    resolved_path = Path(path) if path else _project_root() / "config" / "voice.yaml"
+    logger.debug("Chargement config voice depuis : %s", resolved_path)
+    raw = _read_yaml(resolved_path)
     stt = raw.get("stt") or {}
     tts = raw.get("tts") or {}
     language = raw.get("language") or {}

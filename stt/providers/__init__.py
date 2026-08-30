@@ -1,3 +1,3 @@
-from voice.stt.providers.whisper import FasterWhisperProvider
+from __future__ import annotations
 
-__all__ = ["FasterWhisperProvider"]
+__all__ = []

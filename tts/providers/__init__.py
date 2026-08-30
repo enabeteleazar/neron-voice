@@ -1,3 +1,3 @@
-from voice.tts.providers.piper import PiperFfmpegProvider
+from __future__ import annotations
 
-__all__ = ["PiperFfmpegProvider"]
+__all__ = []
