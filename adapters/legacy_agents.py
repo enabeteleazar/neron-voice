@@ -109,6 +109,18 @@ class TTSAgent:
                     "duration": result.duration,
                 },
             )
+        except ValueError as exc:
+            # Erreur de validation en entrée : faute du client.
+            latency_ms = round((time.monotonic() - start) * 1000, 2)
+            logger.warning(f"Texte invalide pour TTS : {exc}")
+            return AgentResult(
+                success=False,
+                content="",
+                source="tts_agent",
+                error=str(exc),
+                latency_ms=latency_ms,
+                metadata={"error_type": "validation"},
+            )
         except Exception as exc:
             latency_ms = round((time.monotonic() - start) * 1000, 2)
             logger.error(f"Erreur TTS : {exc}")
@@ -118,7 +130,7 @@ class TTSAgent:
                 source="tts_agent",
                 error=f"Erreur synthèse : {exc}",
                 latency_ms=latency_ms,
-                metadata={},
+                metadata={"error_type": "internal"},
             )
 
     async def reload(self) -> bool:

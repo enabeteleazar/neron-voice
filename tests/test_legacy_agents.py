@@ -80,10 +80,8 @@ async def test_tts_agent_success_path(monkeypatch):
 @pytest.mark.asyncio
 async def test_tts_agent_any_error_reports_failure(monkeypatch):
     """
-    Contrairement à STTAgent, TTSAgent ne distingue pas les types d'erreur
-    (validation vs interne) : /synthesize renvoie toujours 422 dans app.py
-    quel que soit le cas. Ce test verrouille ce comportement existant —
-    toute évolution qui l'introduirait devrait aussi mettre à jour app.py.
+    TTSAgent distingue désormais les types d'erreur (validation vs interne)
+    comme STTAgent.
     """
     async def fake_speak(text, options=None):
         raise ValueError("Texte vide")
@@ -93,7 +91,7 @@ async def test_tts_agent_any_error_reports_failure(monkeypatch):
     result = await agent.synthesize("")
 
     assert result.success is False
-    assert "error_type" not in result.metadata
+    assert result.metadata["error_type"] == "validation"
     assert "Texte vide" in result.error
 
 

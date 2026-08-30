@@ -8,7 +8,6 @@ from typing import Any
 from voice.config import load_voice_config
 from voice.models import SpeechResult
 from voice.tts.pipeline import validate_tts_text
-from voice.tts.providers import PiperFfmpegProvider
 from voice.tts.providers.base import TtsProvider
 
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="voice_tts")
@@ -16,6 +15,7 @@ _provider: TtsProvider | None = None
 
 
 def load_engine() -> TtsProvider:
+    from voice.tts.providers.piper import PiperFfmpegProvider
     global _provider
     config = load_voice_config().tts
     if config.provider != "piper":

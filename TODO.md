@@ -7,9 +7,9 @@
 - [x] Suite de tests pytest (89 tests, ~87% de couverture sur `voice/`).
 
 ## P1 — avant un tag `v0.1.0`
-- [ ] Brancher `normalize_french_text` dans `tts/pipeline/text.py::validate_tts_text` (ou documenter clairement pourquoi ce n'est pas encore fait — actuellement le README promet un comportement que le code ne fait pas).
-- [ ] `TTSAgent` ne distingue pas `error_type` (validation vs interne) comme `STTAgent` le fait maintenant. Pas bloquant tant que `/synthesize` reste toujours en 422 sur échec, mais si un jour on veut différencier (ex. texte vide → 400), reprendre le même pattern que `STTAgent.transcribe`.
-- [ ] Découpler les imports eager de `voice/__init__.py` (`from voice import stt, tts`) qui forcent `piper` et `faster-whisper` comme dépendances dures de test même pour tester une fonction pure comme `normalize_french_text`. Piste : imports paresseux dans `stt/providers/__init__.py` et `tts/providers/__init__.py` (import du provider concret seulement à l'instanciation, pas au chargement du package).
+- [x] Brancher `normalize_french_text` dans `tts/pipeline/text.py::validate_tts_text` (ou documenter clairement pourquoi ce n'est pas encore fait — actuellement le README promet un comportement que le code ne fait pas).
+- [x] `TTSAgent` ne distingue pas `error_type` (validation vs interne) comme `STTAgent` le fait maintenant. Pas bloquant tant que `/synthesize` reste toujours en 422 sur échec, mais si un jour on veut différencier (ex. texte vide → 400), reprendre le même pattern que `STTAgent.transcribe`.
+- [x] Découpler les imports eager de `voice/__init__.py` (`from voice import stt, tts`) qui forcent `piper` et `faster-whisper` comme dépendances dures de test même pour tester une fonction pure comme `normalize_french_text`. Piste : imports paresseux dans `stt/providers/__init__.py` et `tts/providers/__init__.py` (import du provider concret seulement à l'instanciation, pas au chargement du package).
 
 ## P2 — plus tard
 - [ ] Lock/versioning autour de `_provider` (stt et tts) pour éviter une race si `/reload` est appelé pendant une requête en cours.

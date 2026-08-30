@@ -10,7 +10,6 @@ from concurrent.futures import ThreadPoolExecutor
 from voice.config import load_voice_config
 from voice.models import TranscriptionResult
 from voice.stt.pipeline import validate_audio_input
-from voice.stt.providers import FasterWhisperProvider
 from voice.stt.providers.base import SttProvider
 
 logger = logging.getLogger("voice.stt")
@@ -20,6 +19,7 @@ _provider: SttProvider | None = None
 
 
 def _build_provider() -> SttProvider:
+    from voice.stt.providers.whisper import FasterWhisperProvider
     config = load_voice_config().stt
     if config.provider != "whisper":
         raise RuntimeError(f"Provider STT non supporté : {config.provider}")

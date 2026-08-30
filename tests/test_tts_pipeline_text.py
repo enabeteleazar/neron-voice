@@ -29,7 +29,8 @@ def test_text_over_limit_raises_value_error():
 
 def test_text_exactly_at_limit_is_accepted():
     text = "a" * 100
-    assert validate_tts_text(text, max_chars=100) == text
+    # Le texte est normalisé (majuscule initiale), on vérifie que la longueur est préservée
+    assert validate_tts_text(text, max_chars=100) == "A" + "a" * 99
 
 
 def test_text_under_limit_is_returned_unchanged_besides_strip():
